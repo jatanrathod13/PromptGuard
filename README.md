@@ -1,5 +1,10 @@
 # BehaviorCI
 
+[![PyPI version](https://img.shields.io/pypi/v/behaviorci.svg)](https://pypi.org/project/behaviorci/)
+[![Python versions](https://img.shields.io/pypi/pyversions/behaviorci.svg)](https://pypi.org/project/behaviorci/)
+[![CI](https://github.com/jatanrathod13/behaviorci/actions/workflows/ci.yaml/badge.svg)](https://github.com/jatanrathod13/behaviorci/actions/workflows/ci.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **CI/CD for LLM behavior.**
 
 > Prompts don't ship until behavior passes tests.
@@ -190,7 +195,7 @@ See [docs/cli.md](docs/cli.md) for full reference.
 
 ```bash
 # Clone and install in development mode
-git clone https://github.com/behaviorci/behaviorci
+git clone https://github.com/jatanrathod13/behaviorci
 cd behaviorci
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
