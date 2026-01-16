@@ -1,0 +1,5 @@
+{"input": {"question": "What is 2 + 2?"}, "expected_output": {"answer": "4", "confidence": 1.0}}
+{"input": {"question": "What color is the sky on a clear day?"}, "expected_output": {"answer": "blue", "confidence": 0.95}}
+{"input": {"question": "What is the capital of France?"}, "expected_output": {"answer": "Paris", "confidence": 1.0}}
+{"input": {"question": "How many days are in a week?"}, "expected_output": {"answer": "7", "confidence": 1.0}}
+{"input": {"question": "What planet do we live on?"}, "expected_output": {"answer": "Earth", "confidence": 1.0}}

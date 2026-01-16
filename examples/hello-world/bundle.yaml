@@ -1,0 +1,30 @@
+name: example-bundle
+version: "1.0"
+description: An example Behavior Bundle demonstrating BehaviorCI features
+
+prompt_path: prompt.md
+dataset_path: dataset.jsonl
+
+output_contract:
+  schema_path: schema.json
+  invariants:
+    - "len(raw_output) < 1000"
+    - "'error' not in raw_output.lower()"
+
+thresholds:
+  - metric: pass_rate
+    operator: ">="
+    value: 0.8
+  - metric: schema_valid_rate
+    operator: ">="
+    value: 0.9
+
+provider:
+  name: mock  # Change to 'openai' or 'anthropic' for real testing
+  model: null
+  temperature: 0.0
+  max_tokens: 256
+
+parallel: false
+timeout: 30.0
+retries: 1
