@@ -4,51 +4,61 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/behaviorci.svg)](https://pypi.org/project/behaviorci/)
 [![CI](https://github.com/jatanrathod13/behaviorci/actions/workflows/ci.yaml/badge.svg)](https://github.com/jatanrathod13/behaviorci/actions/workflows/ci.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://img.shields.io/pypi/dm/behaviorci)](https://pypi.org/project/behaviorci/)
 
 **CI/CD for LLM behavior.**
 
 > Prompts don't ship until behavior passes tests.
 
-BehaviorCI adds a **merge gate** in front of AI systems.  
-You define expected behavior as **specs + tests + thresholds**.  
-Every prompt or model change is evaluated in CI—and **fails the build** if behavior regresses.
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Every prompt change = automated test run → fail if regression
+└─────────────────────────────────────────────────────────────┘
+```
 
-Think **GitHub Actions for LLM behavior**.
+Think **Jest for prompts** — write tests, run CI, block bad changes.
 
 ---
 
-## Why this exists
+## Why BehaviorCI?
 
 LLM behavior silently regresses:
-- Prompt tweaks break edge cases
-- Model updates shift outputs
-- Fixes aren't captured as tests
-- The same failures reappear
+- Prompt tweaks break edge cases you forgot about
+- Model updates shift outputs unexpectedly
+- Fixes aren't captured as tests — same bugs resurface
+- No way to know if "improvements" actually work
 
-Traditional CI protects code, not behavior.
+**BehaviorCI turns LLM behavior into engineering:**
 
-BehaviorCI turns LLM behavior into an **engineering artifact**:
-- Versioned in git
-- Reviewed in PRs
-- Tested on every change
-- Promoted only if thresholds pass
-- Rollbackable when behavior breaks
+| Before | After |
+|--------|-------|
+| Manual prompt testing | Automated test suite |
+| Hoping it works | Thresholds: 90% pass rate required |
+| Unknown regressions | Diff reports show exactly what broke |
+| No CI blocking | Merge gate: fails build if quality drops |
 
 ---
 
-## What it is (and isn't)
+## What Makes It Different
 
-### ✅ It is
-- CI/CD for LLM behavior
-- A file-first spec format ("Behavior Bundles")
-- Deterministic eval runs with reports & diffs
-- Merge-blocking gates
+| Feature | BehaviorCI | PromptFoo | Langfuse |
+|---------|------------|-----------|----------|
+| **Focus** | Testing & regression detection | Prompt comparison | Observability |
+| **CI Gate** | ✅ Native fail-on-regression | ❌ No | ❌ No |
+| **Agent Testing** | ✅ Tool-calling behavior | ❌ | ❌ |
+| **Regression Diff** | ✅ Compare runs over time | ❌ | ❌ |
+| **Threshold Gating** | ✅ Pass/fail based on metrics | Partial | ❌ |
+| **Self-hosted** | ✅ 100% local | ✅ | ❌ (hosted) |
 
-### ❌ It is not
-- A prompt optimizer
-- Observability or monitoring
-- An agent framework
-- A hosted black box
+### Comparison
+
+```
+PromptFoo = "Which prompt is better?" (experimentation)
+Langfuse  = "How is our prompt performing?" (monitoring)
+BehaviorCI = "Did our prompt break?" (testing & gating)
+```
+
+**Not just evaluation — it's CI/CD.**
 
 ---
 
@@ -58,42 +68,45 @@ BehaviorCI turns LLM behavior into an **engineering artifact**:
 pip install behaviorci
 ```
 
+---
+
 ## Quickstart
 
 ```bash
-# Create an example bundle
+# 1. Create an example bundle
 behaviorci init bundles/my-test
 
-# Validate configuration
+# 2. Validate configuration
 behaviorci validate bundles/my-test/bundle.yaml
 
-# Run with mock provider (no API key needed)
+# 3. Run tests (mock provider - no API key needed)
 behaviorci run bundles/my-test/bundle.yaml --provider mock
 
-# Run with OpenAI
+# 4. Run with OpenAI
 export OPENAI_API_KEY=sk-xxx
 behaviorci run bundles/my-test/bundle.yaml
 ```
 
-If thresholds fail → exit code ≠ 0 → CI fails.
+**If thresholds fail → exit code 1 → CI fails.**
 
 ---
 
 ## Core Concept: Behavior Bundles
 
-A **Behavior Bundle** defines:
+A **Behavior Bundle** is a version-controlled test suite for prompts:
 
-| Component | Purpose |
-|-----------|---------|
-| `bundle.yaml` | Configuration: prompt path, dataset, thresholds |
-| `prompt.md` | Prompt template with `{{ variables }}` |
-| `dataset.jsonl` | Test cases (one JSON per line) |
-| `schema.json` | Output structure validation (optional) |
+```
+my-bundle/
+├── bundle.yaml    # Config: prompt, dataset, thresholds
+├── prompt.md     # Prompt template with {{ variables }}
+├── dataset.jsonl # Test cases (JSONL)
+└── schema.json   # Output validation (optional)
+```
 
 ### Example bundle.yaml
 
 ```yaml
-name: my-feature
+name: customer-support
 version: "1.0"
 
 prompt_path: prompt.md
@@ -102,12 +115,13 @@ dataset_path: dataset.jsonl
 output_contract:
   schema_path: schema.json
   invariants:
-    - "len(raw_output) < 1000"
+    - "len(raw_output) < 500"
+    - "'error' not in raw_output.lower()"
 
 thresholds:
   - metric: pass_rate
     operator: ">="
-    value: 0.9
+    value: 0.90  # 90% must pass
 
 provider:
   name: openai
@@ -115,7 +129,59 @@ provider:
   temperature: 0.0
 ```
 
-See [docs/behavior-bundles.md](docs/behavior-bundles.md) for full specification.
+### Agent Bundles (v0.2+)
+
+Test AI agent tool-calling behavior:
+
+```yaml
+name: coding-agent
+version: "1.0"
+
+agent:
+  type: tool-calling
+  model: gpt-4o
+  max_steps: 10
+
+tools:
+  - type: function
+    name: read_file
+    description: "Read a file"
+  - type: function
+    name: write_file
+    description: "Write to a file"
+
+tasks_path: tasks.jsonl
+```
+
+---
+
+## Key Features
+
+### Threshold Gating
+```yaml
+thresholds:
+  - metric: pass_rate
+    operator: ">="
+    value: 0.90    # Must pass 90% of tests
+  - metric: avg_latency_ms
+    operator: "<"
+    value: 2000    # Must respond under 2s
+```
+
+### Baseline & Diff (v0.2+)
+```bash
+# Save current run as baseline
+behaviorci promote bundles/my-feature/
+
+# Compare against baseline
+behaviorci diff bundles/my-feature/
+# Shows: new failures, fixed failures, metric changes
+```
+
+### Output Validation
+- **JSON Schema** - Enforce output structure
+- **Invariants** - Python expressions (e.g., `len < 500`, no profanity)
+- **Regex patterns** - Match specific formats
 
 ---
 
@@ -132,75 +198,87 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-    - run: pip install behaviorci
-    - run: behaviorci run bundles/my-feature/bundle.yaml
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install BehaviorCI
+        run: pip install behaviorci
+
+      - name: Run tests
+        run: behaviorci run bundles/my-feature/bundle.yaml
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      # v0.2+: Block on regressions
+      - name: Diff check
+        run: behaviorci diff bundles/my-feature/ --ci-gate
 ```
 
-See [docs/ci-integration.md](docs/ci-integration.md) for GitLab, CircleCI, and Azure DevOps examples.
+See [docs/ci-integration.md](docs/ci-integration.md) for GitLab, CircleCI, and Azure DevOps.
+
+---
+
+## CLI Reference
+
+| Command | Description |
+|---------|-------------|
+| `behaviorci init [path]` | Scaffold new bundle |
+| `behaviorci validate <bundle>` | Validate configuration |
+| `behaviorci run <bundle>` | Execute tests |
+| `behaviorci promote <bundle>` | Save as baseline (v0.2+) |
+| `behaviorci diff <bundle>` | Compare vs baseline (v0.2+) |
+| `behaviorci agent init` | Scaffold agent bundle (v0.2+) |
+| `behaviorci agent run` | Run agent tests (v0.2+) |
+
+### Options
+
+```bash
+behaviorci run bundle.yaml --provider openai   # Override provider
+behaviorci run bundle.yaml --format json       # JSON output
+behaviorci run bundle.yaml --output report.md  # Write to file
+behaviorci run bundle.yaml --ci-gate          # Fail if thresholds fail
+```
 
 ---
 
 ## Providers
 
-| Provider | Environment Variable | Example Models |
-|----------|---------------------|----------------|
-| OpenAI | `OPENAI_API_KEY` | gpt-4o, gpt-4o-mini |
+| Provider | Env Variable | Models |
+|----------|-------------|--------|
+| OpenAI | `OPENAI_API_KEY` | gpt-4o, gpt-4o-mini, etc. |
 | Anthropic | `ANTHROPIC_API_KEY` | claude-3-opus, claude-3-sonnet |
 | Mock | (none) | Deterministic test responses |
 
 ---
 
-## CLI Commands
-
-| Command | Description |
-|---------|-------------|
-| `behaviorci init [path]` | Scaffold example bundle |
-| `behaviorci validate <bundle>` | Validate configuration |
-| `behaviorci run <bundle>` | Execute tests and emit report |
-
-### Run Options
-
-```bash
-behaviorci run bundle.yaml --provider openai  # Override provider
-behaviorci run bundle.yaml --format json      # JSON output
-behaviorci run bundle.yaml --output report.md # Write to file
-behaviorci run bundle.yaml --verbose          # Detailed output
-```
-
-See [docs/cli.md](docs/cli.md) for full reference.
-
----
-
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
+| Doc | Description |
+|-----|-------------|
 | [Quickstart](docs/quickstart.md) | Get started in 5 minutes |
-| [Architecture](docs/architecture.md) | System design and components |
-| [Behavior Bundles](docs/behavior-bundles.md) | Full bundle specification |
-| [CLI Reference](docs/cli.md) | All commands and options |
-| [CI Integration](docs/ci-integration.md) | GitHub, GitLab, CircleCI guides |
+| [Behavior Bundles](docs/behavior-bundles.md) | Full specification |
+| [CLI Reference](docs/cli.md) | All commands & options |
+| [CI Integration](docs/ci-integration.md) | GitHub, GitLab, CircleCI |
+| [Architecture](docs/architecture.md) | System design |
 | [FAQ](docs/faq.md) | Common questions |
-| [Roadmap](docs/roadmap.md) | What's coming next |
+| [Roadmap](docs/roadmap.md) | What's coming |
 
 ---
 
 ## Development
 
 ```bash
-# Clone and install in development mode
+# Clone
 git clone https://github.com/jatanrathod13/behaviorci
 cd behaviorci
+
+# Setup
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Run tests
+# Test
 pytest tests/ -v
 
 # Lint
@@ -210,10 +288,14 @@ ruff check behaviorci/
 mypy behaviorci/
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ---
 
 ## License
 
-MIT
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  <sub>Built with 🔥 by <a href="https://github.com/jatanrathod13">@jatanrathod13</a></sub>
+</p>
