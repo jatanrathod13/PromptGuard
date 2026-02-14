@@ -51,11 +51,11 @@ dev = [
 promptguard = "promptguard.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/jatanrathod13/promptguard"
-Documentation = "https://github.com/jatanrathod13/promptguard#readme"
-Repository = "https://github.com/jatanrathod13/promptguard"
-Issues = "https://github.com/jatanrathod13/promptguard/issues"
-Changelog = "https://github.com/jatanrathod13/promptguard/releases"
+Homepage = "https://github.com/jatanrathod13/PromptBehaviorCI"
+Documentation = "https://github.com/jatanrathod13/PromptBehaviorCI#readme"
+Repository = "https://github.com/jatanrathod13/PromptBehaviorCI"
+Issues = "https://github.com/jatanrathod13/PromptBehaviorCI/issues"
+Changelog = "https://github.com/jatanrathod13/PromptBehaviorCI/releases"
 
 [tool.hatch.build.targets.wheel]
 packages = ["promptguard"]
